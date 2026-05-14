@@ -1,0 +1,91 @@
+<aside id="sidebar" class="sidebar w-72 flex flex-col shadow-sm h-full">
+    <div class="p-6 border-b border-gray-100">
+        <div class="flex items-center space-x-3">
+            <div class="bg-telkom p-2 rounded-xl"><i class="fas fa-graduation-cap text-white text-xl"></i></div>
+            <div><h1 class="text-xl font-bold text-gray-800">SIAPEL</h1><p class="text-xs text-gray-400">Sistem Asisten Pelajar</p></div>
+        </div>
+    </div>
+    <div class="p-4 border-b border-gray-100">
+        <div class="flex items-center space-x-3 bg-gray-50 rounded-xl p-3">
+            <div class="bg-telkom rounded-full w-10 h-10 flex items-center justify-center"><span class="text-white font-bold text-sm"><%= user.name.charAt(0).toUpperCase() %></span></div>
+            <div class="truncate"><p class="font-semibold text-gray-800 text-sm"><%= user.name %></p><p class="text-xs text-gray-400"><%= user.kelas %></p></div>
+        </div>
+    </div>
+    
+    <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+        <a href="/dashboard" id="nav-dashboard" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-home w-5"></i><span class="font-bold">Dashboard</span>
+        </a>
+        <a href="/tasks" id="nav-tasks" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-tasks w-5"></i><span class="font-bold">Tugas</span>
+        </a>
+        <a href="/notes" id="nav-notes" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-book w-5"></i><span class="font-bold">Catatan</span>
+        </a>
+        <a href="/quiz" id="nav-quiz" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-question-circle w-5"></i><span class="font-bold">Quiz</span>
+        </a>
+        <a href="/schedule" id="nav-schedule" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-calendar-alt w-5"></i><span class="font-bold">Jadwal</span>
+        </a>
+        <a href="/study" id="nav-study" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-clock w-5"></i><span class="font-bold">Study Tracker</span>
+        </a>
+        <a href="/gamification" id="nav-gamification" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-trophy w-5"></i><span class="font-bold">Prestasi</span>
+        </a>
+        <a href="/flashcard" id="nav-flashcard" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-id-card w-5"></i><span class="font-bold">Flashcard</span>
+        </a>
+        <a href="/ai-chat" id="nav-ai-chat" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-robot w-5"></i><span class="font-bold">AI Assistant</span>
+        </a>
+        <div class="border-t border-gray-100 my-2 pt-2"></div>
+        <a href="#" onclick="toggleDarkMode()" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-moon w-5"></i><span class="font-bold">Dark Mode</span>
+        </a>
+        <a href="/export/tasks/excel" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-download w-5"></i><span class="font-bold">Ekspor Tugas</span>
+        </a>
+        <a href="/export/notes/excel" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fas fa-file-excel w-5"></i><span class="font-bold">Ekspor Catatan</span>
+        </a>
+        <a href="/telegram/setup" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-gray-700 hover:bg-gray-100">
+            <i class="fab fa-telegram w-5"></i><span class="font-bold">Telegram Setup</span>
+        </a>
+        <div class="border-t border-gray-100 my-2 pt-2"></div>
+        <a href="/logout" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl transition-all font-bold text-red-600 hover:bg-red-50">
+            <i class="fas fa-sign-out-alt w-5"></i><span class="font-bold">Logout</span>
+        </a>
+    </nav>
+    
+    <div class="p-4 border-t border-gray-100"><p class="text-xs text-gray-400 text-center">© 2026 SIAPEL</p></div>
+</aside>
+
+<script>
+    var currentPath = window.location.pathname;
+    var activeId = '';
+    if (currentPath === '/dashboard') activeId = 'nav-dashboard';
+    else if (currentPath === '/tasks') activeId = 'nav-tasks';
+    else if (currentPath === '/notes') activeId = 'nav-notes';
+    else if (currentPath === '/quiz') activeId = 'nav-quiz';
+    else if (currentPath === '/schedule') activeId = 'nav-schedule';
+    else if (currentPath === '/study') activeId = 'nav-study';
+    else if (currentPath === '/gamification') activeId = 'nav-gamification';
+    else if (currentPath === '/flashcard') activeId = 'nav-flashcard';
+    else if (currentPath === '/ai-chat') activeId = 'nav-ai-chat';
+    
+    if (activeId) {
+        var activeLink = document.getElementById(activeId);
+        if (activeLink) {
+            activeLink.classList.add('bg-telkom', 'text-white');
+            activeLink.classList.remove('text-gray-700', 'hover:bg-gray-100');
+        }
+    }
+    
+    function toggleDarkMode() { 
+        document.body.classList.toggle('dark'); 
+        localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled');
+    }
+    if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+</script>

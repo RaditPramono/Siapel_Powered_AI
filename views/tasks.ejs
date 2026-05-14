@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Tugas - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; margin: 0; padding: 0; transition: background 0.3s ease; }
+        .bg-telkom { background-color: #DC0000; }
+        .sidebar { background: white; border-right: 1px solid #ddd; transition: all 0.3s ease; }
+        .nav-item:hover { background-color: #FFF5F5; color: #DC0000; }
+        .task-card { background: white; border-radius: 16px; border: 1px solid #ddd; transition: all 0.3s ease; }
+        .task-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        .priority-high { border-left: 4px solid #DC0000; }
+        .priority-medium { border-left: 4px solid #F59E0B; }
+        .priority-low { border-left: 4px solid #10B981; }
+        
+        /* DARK MODE ELEGAN */
+        body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark .sidebar { background-color: #1e293b !important; border-right-color: #334155 !important; }
+        body.dark .sidebar .text-gray-800, body.dark .sidebar .text-gray-700, body.dark .sidebar .text-gray-600, body.dark .sidebar h1, body.dark .sidebar p { color: #f1f5f9 !important; }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background-color: #334155 !important; color: #ffffff !important; }
+        body.dark .task-card { background-color: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark .text-gray-800, body.dark .text-gray-700, body.dark .text-gray-600, body.dark .font-bold { color: #f1f5f9 !important; }
+        body.dark .text-gray-400, body.dark .text-gray-500 { color: #94a3b8 !important; }
+        body.dark .bg-gray-50, body.dark .bg-gray-100, body.dark .bg-white { background-color: #1e293b !important; }
+        body.dark .border-gray-100, body.dark .border-gray-200 { border-color: #334155 !important; }
+        body.dark .bg-yellow-50 { background-color: #422800 !important; }
+        body.dark .text-yellow-800 { color: #fbbf24 !important; }
+        body.dark .bg-red-50 { background-color: #450000 !important; }
+        body.dark .bg-green-50 { background-color: #064e3b !important; }
+        body.dark .menu-btn { background-color: #DC0000 !important; }
+        
+        .menu-btn { position: fixed; top: 12px; left: 12px; z-index: 999; background: #DC0000; color: white; padding: 10px 14px; border-radius: 12px; display: none; cursor: pointer; }
+        @media (max-width: 768px) { 
+            .menu-btn { display: block; } 
+            .sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; width: 280px; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; } 
+            .sidebar.open { transform: translateX(0); } 
+            .main-content { padding-top: 60px; } 
+            .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; } 
+            .sidebar-overlay.active { display: block; } 
+        }
+    </style>
+</head>
+<body>
+    <button onclick="toggleSidebar()" class="menu-btn"><i class="fas fa-bars text-xl"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <div class="flex h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 main-content">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
+                <div><h1 class="text-2xl md:text-3xl font-bold text-gray-800"><i class="fas fa-tasks text-telkom mr-3"></i>Manajemen Tugas</h1><p class="text-xs md:text-sm text-gray-400 mt-1">Kelola daftar tugas belajarmu</p></div>
+                <button onclick="openAddModal()" class="bg-telkom text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base w-full sm:w-auto"><i class="fas fa-plus mr-2"></i>Tambah Tugas</button>
+            </div>
+            
+            <div class="space-y-4">
+                <% tasks.forEach(function(task) { %>
+                    <div class="task-card p-4 md:p-5 <%= task.priority === 'tinggi' ? 'priority-high' : task.priority === 'sedang' ? 'priority-medium' : 'priority-low' %>">
+                        <div class="flex flex-col md:flex-row justify-between items-start gap-3">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-base md:text-lg font-bold text-gray-800 <%= task.status === 'selesai' ? 'line-through text-gray-400' : '' %> truncate"><%= task.title %></h3>
+                                <p class="text-gray-500 mt-1 text-xs md:text-sm break-words"><%= task.description %></p>
+                                <div class="flex flex-wrap gap-3 mt-3"><span class="text-xs text-gray-400"><i class="far fa-calendar-alt mr-1"></i><%= new Date(task.deadline).toLocaleDateString('id-ID') %></span><span class="text-xs px-2 py-0.5 rounded-full font-semibold <%= task.priority === 'tinggi' ? 'bg-red-100 text-red-700' : task.priority === 'sedang' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' %>"><%= task.priority === 'tinggi' ? 'Tinggi' : task.priority === 'sedang' ? 'Sedang' : 'Rendah' %></span></div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="showBreakdown('<%= task.title.replace(/'/g, "\\'") %>')" class="px-3 md:px-4 py-1 md:py-2 rounded-xl text-xs md:text-sm font-bold bg-purple-600 text-white hover:bg-purple-700"><i class="fas fa-brain mr-1"></i>AI</button>
+                                <form action="/tasks/toggle/<%= task.id %>" method="POST"><button type="submit" class="px-3 md:px-4 py-1 md:py-2 rounded-xl text-xs md:text-sm font-bold <%= task.status === 'selesai' ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white' %>"><i class="fas <%= task.status === 'selesai' ? 'fa-undo' : 'fa-check' %> mr-1"></i><%= task.status === 'selesai' ? 'Batal' : 'Selesai' %></button></form>
+                                <form action="/tasks/delete/<%= task.id %>" method="POST" onsubmit="return confirm('Yakin hapus?')"><button type="submit" class="px-3 md:px-4 py-1 md:py-2 rounded-xl text-xs md:text-sm font-bold bg-white border border-gray-200 text-red-600 hover:bg-red-50"><i class="fas fa-trash-alt mr-1"></i>Hapus</button></form>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+                <% if (tasks.length === 0) { %><div class="bg-white rounded-2xl p-8 md:p-12 text-center task-card"><i class="fas fa-clipboard-list text-4xl md:text-5xl text-gray-300 mb-4"></i><p class="text-gray-400 text-sm md:text-base">Belum ada tugas. Yuk tambah tugas baru!</p></div><% } %>
+            </div>
+        </main>
+    </div>
+    
+    <div id="addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"><h2 class="text-xl font-bold mb-4">Tambah Tugas</h2><form action="/tasks/add" method="POST"><input type="text" name="title" placeholder="Judul tugas" class="w-full p-3 border rounded-xl mb-3" required><textarea name="description" placeholder="Deskripsi" class="w-full p-3 border rounded-xl mb-3" rows="3"></textarea><input type="datetime-local" name="deadline" class="w-full p-3 border rounded-xl mb-3" required><select name="priority" class="w-full p-3 border rounded-xl mb-4"><option value="rendah">Prioritas Rendah</option><option value="sedang">Prioritas Sedang</option><option value="tinggi">Prioritas Tinggi</option></select><div class="flex justify-end space-x-3"><button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-gray-300 rounded-xl">Batal</button><button type="submit" class="px-4 py-2 bg-telkom text-white rounded-xl">Simpan</button></div></form></div>
+    </div>
+    
+    <div id="aiModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold"><i class="fas fa-brain text-purple-600 mr-2"></i>AI Breakdown</h2><button onclick="closeAIModal()" class="text-gray-500 text-2xl">&times;</button></div><div id="aiBreakdownContent" class="text-gray-700"></div><div class="mt-4 flex justify-end"><button onclick="closeAIModal()" class="px-4 py-2 bg-gray-300 rounded-xl">Tutup</button></div></div>
+    </div>
+    
+    <script>
+        function openAddModal() { document.getElementById('addModal').classList.remove('hidden'); document.getElementById('addModal').classList.add('flex'); }
+        function closeAddModal() { document.getElementById('addModal').classList.remove('flex'); document.getElementById('addModal').classList.add('hidden'); }
+        function closeAIModal() { document.getElementById('aiModal').classList.remove('flex'); document.getElementById('aiModal').classList.add('hidden'); }
+        function showBreakdown(taskTitle) { document.getElementById('aiModal').classList.remove('hidden'); document.getElementById('aiModal').classList.add('flex'); document.getElementById('aiBreakdownContent').innerHTML = '<div class="space-y-3"><div class="text-center mb-4"><i class="fas fa-brain text-purple-600 text-4xl mb-2"></i><h3 class="text-xl font-bold">AI Breakdown</h3><p class="text-gray-500 text-sm">Langkah-langkah mengerjakan tugas</p></div><div class="bg-gray-50 rounded-lg p-3 mb-3"><p class="font-semibold"><i class="fas fa-tasks text-telkom mr-2"></i>Tugas: <span class="text-telkom">' + taskTitle + '</span></p></div><div class="space-y-2"><div class="flex items-start gap-3 p-2 hover:bg-green-50 rounded-lg"><i class="fas fa-check-circle text-green-600 text-xl mt-0.5"></i><div><span class="font-bold">Tahap 1: Persiapan</span><br><span class="text-sm">• Baca dan pahami tugas<br>• Siapkan alat dan bahan</span></div></div><div class="flex items-start gap-3 p-2 hover:bg-blue-50 rounded-lg"><i class="fas fa-check-circle text-blue-600 text-xl mt-0.5"></i><div><span class="font-bold">Tahap 2: Riset</span><br><span class="text-sm">• Cari referensi<br>• Catat poin penting</span></div></div><div class="flex items-start gap-3 p-2 hover:bg-purple-50 rounded-lg"><i class="fas fa-check-circle text-purple-600 text-xl mt-0.5"></i><div><span class="font-bold">Tahap 3: Eksekusi</span><br><span class="text-sm">• Kerjakan sesuai kerangka<br>• Fokus satu bagian</span></div></div><div class="flex items-start gap-3 p-2 hover:bg-yellow-50 rounded-lg"><i class="fas fa-check-circle text-yellow-600 text-xl mt-0.5"></i><div><span class="font-bold">Tahap 4: Review</span><br><span class="text-sm">• Periksa hasil pekerjaan<br>• Perbaiki kesalahan</span></div></div><div class="flex items-start gap-3 p-2 hover:bg-red-50 rounded-lg"><i class="fas fa-check-circle text-red-600 text-xl mt-0.5"></i><div><span class="font-bold">Tahap 5: Finalisasi</span><br><span class="text-sm">• Rapikan format<br>• Kumpulkan tepat waktu</span></div></div></div><div class="mt-4 p-3 bg-telkom text-white rounded-lg"><div><i class="fas fa-hourglass-half mr-2"></i><span class="font-bold">Estimasi:</span> 2-4 jam</div><div class="mt-2"><i class="fas fa-lightbulb mr-2"></i><span class="font-bold">Tips:</span> Kerjakan dari yang paling mudah!</div></div></div>'; }
+        function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+        if (window.innerWidth < 768) { document.querySelectorAll('#sidebar a').forEach(link => { link.addEventListener('click', () => { if (window.innerWidth < 768) toggleSidebar(); }); }); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Quiz - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; margin: 0; padding: 0; transition: background 0.3s ease; }
+        .bg-telkom { background-color: #DC0000; }
+        .sidebar { background: white; border-right: 1px solid #ddd; transition: all 0.3s ease; }
+        .nav-item:hover { background-color: #FFF5F5; color: #DC0000; }
+        .quiz-card { background: white; border-radius: 16px; border: 1px solid #ddd; transition: all 0.3s ease; }
+        .quiz-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        
+        body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark .sidebar { background-color: #1e293b !important; border-right-color: #334155 !important; }
+        body.dark .sidebar .text-gray-800, body.dark .sidebar .text-gray-700, body.dark .sidebar h1, body.dark .sidebar p { color: #f1f5f9 !important; }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background-color: #334155 !important; color: #ffffff !important; }
+        body.dark .quiz-card { background-color: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark .text-gray-800, body.dark .text-gray-700, body.dark .font-bold { color: #f1f5f9 !important; }
+        body.dark .text-gray-400, body.dark .text-gray-500 { color: #94a3b8 !important; }
+        body.dark .bg-gray-50, body.dark .bg-gray-100, body.dark .bg-white { background-color: #1e293b !important; }
+        body.dark .border-gray-100, body.dark .border-gray-200 { border-color: #334155 !important; }
+        body.dark .menu-btn { background-color: #DC0000 !important; }
+        
+        .menu-btn { position: fixed; top: 12px; left: 12px; z-index: 999; background: #DC0000; color: white; padding: 10px 14px; border-radius: 12px; display: none; cursor: pointer; }
+        @media (max-width: 768px) { 
+            .menu-btn { display: block; } 
+            .sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; width: 280px; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; } 
+            .sidebar.open { transform: translateX(0); } 
+            .main-content { padding-top: 60px; } 
+            .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; } 
+            .sidebar-overlay.active { display: block; } 
+        }
+    </style>
+</head>
+<body>
+    <button onclick="toggleSidebar()" class="menu-btn"><i class="fas fa-bars text-xl"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <div class="flex h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 main-content">
+            <div class="mb-8">
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800"><i class="fas fa-question-circle text-telkom mr-3"></i>Kuis SIAPEL</h1>
+                <p class="text-xs md:text-sm text-gray-400 mt-1">Kerjakan kuis yang sudah digenerate AI dari catatanmu</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <% 
+                // GROUP QUIZZES BERDASARKAN note_id (1 catatan = 1 paket quiz)
+                const groupedQuizzes = {};
+                quizzes.forEach(quiz => {
+                    if (!groupedQuizzes[quiz.note_id]) {
+                        groupedQuizzes[quiz.note_id] = {
+                            note_title: quiz.note_title,
+                            note_id: quiz.note_id,
+                            count: 0,
+                            first_id: quiz.id
+                        };
+                    }
+                    groupedQuizzes[quiz.note_id].count++;
+                });
+                %>
+                
+                <% for (const noteId in groupedQuizzes) { %>
+                    <div class="quiz-card p-6 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800"><%= groupedQuizzes[noteId].note_title %></h3>
+                            <p class="text-xs text-gray-400 mt-1">
+                                <i class="fas fa-file-alt mr-1"></i> <%= groupedQuizzes[noteId].count %> soal
+                            </p>
+                        </div>
+                        <a href="/quiz/take/<%= groupedQuizzes[noteId].note_id %>" class="bg-telkom text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-telkom transition-all">
+                            <i class="fas fa-play mr-1"></i>Kerjakan Quiz
+                        </a>
+                    </div>
+                <% } %>
+                
+                <% if (quizzes.length === 0) { %>
+                    <div class="col-span-2 bg-white rounded-2xl p-12 text-center quiz-card">
+                        <i class="fas fa-clipboard-list text-5xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-400 text-sm font-bold">Belum ada kuis. Buat catatan dan generate quiz!</p>
+                        <a href="/notes" class="inline-block mt-4 bg-telkom text-white px-6 py-2 rounded-xl font-bold">Buat Catatan</a>
+                    </div>
+                <% } %>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+        if (window.innerWidth < 768) { document.querySelectorAll('#sidebar a').forEach(link => { link.addEventListener('click', () => { if (window.innerWidth < 768) toggleSidebar(); }); }); }
+    </script>
+</body>
+</html>

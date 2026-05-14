@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Setup - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; }
+        .bg-telkom { background-color: #DC0000; }
+        .sidebar { background: white; border-right: 1px solid #ddd; }
+        .card { background: white; border-radius: 16px; border: 1px solid #ddd; padding: 24px; max-width: 500px; margin: 0 auto; }
+        
+        body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark .sidebar, body.dark .card { background-color: #1e293b; border-color: #334155; }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        
+        <main class="flex-1 overflow-y-auto p-8">
+            <div class="card">
+                <h1 class="text-2xl font-bold mb-4"><i class="fab fa-telegram text-telkom mr-2"></i>Notifikasi Telegram</h1>
+                <p class="text-gray-600 mb-6">Dapatkan reminder tugas otomatis ke Telegram kamu!</p>
+                
+                <% if (success) { %>
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4"><%= success %></div>
+                <% } %>
+                <% if (error) { %>
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"><%= error %></div>
+                <% } %>
+                
+                <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                    <p class="font-bold text-sm">📌 Cara Mendapatkan Telegram ID:</p>
+                    <ol class="text-sm mt-2 list-decimal list-inside">
+                        <li>Buka Telegram, cari <span class="font-mono bg-gray-200 px-1">@userinfobot</span></li>
+                        <li>Klik Start</li>
+                        <li>Bot akan mengirim ID kamu (contoh: <span class="font-mono">123456789</span>)</li>
+                        <li>Copy ID-nya, lalu paste di bawah</li>
+                    </ol>
+                </div>
+                
+                <form action="/telegram/save" method="POST">
+                    <label class="block text-sm font-bold mb-2">Telegram ID:</label>
+                    <input type="text" name="telegram_id" placeholder="Contoh: 123456789" value="<%= user.telegram_id %>" class="w-full p-3 border rounded-lg mb-4">
+                    <button type="submit" class="bg-telkom text-white px-6 py-2 rounded-lg w-full font-bold">Simpan Telegram ID</button>
+                </form>
+                
+                <form action="/telegram/test" method="POST" class="mt-4">
+                    <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg w-full font-bold"><i class="fas fa-paper-plane mr-2"></i>Kirim Test Pesan</button>
+                </form>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Mode Belajar - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; margin: 0; padding: 0; transition: background 0.3s ease; }
+        .bg-telkom { background-color: #DC0000; }
+        .study-card { background: white; border-radius: 24px; border: 1px solid #ddd; transition: all 0.3s ease; cursor: pointer; min-height: 400px; display: flex; align-items: center; justify-content: center; }
+        .study-card:hover { transform: scale(1.02); box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2); }
+        .card-flipped .card-front { display: none; }
+        .card-flipped .card-back { display: block; }
+        .card-front, .card-back { transition: all 0.3s ease; }
+        
+        body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark .study-card { background-color: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark .text-gray-600, body.dark .text-gray-700 { color: #cbd5e1 !important; }
+        body.dark .text-gray-400 { color: #94a3b8 !important; }
+        body.dark .bg-gray-100 { background-color: #0f172a !important; }
+        
+        .menu-btn { position: fixed; top: 12px; left: 12px; z-index: 999; background: #DC0000; color: white; padding: 10px 14px; border-radius: 12px; display: none; cursor: pointer; }
+        @media (max-width: 768px) { .menu-btn { display: block; } }
+    </style>
+</head>
+<body>
+    <button onclick="window.location.href='/flashcard'" class="menu-btn"><i class="fas fa-arrow-left text-xl"></i></button>
+    
+    <div class="container mx-auto p-4 md:p-8 max-w-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <a href="/flashcard" class="text-telkom hover:underline"><i class="fas fa-arrow-left mr-2"></i>Kembali</a>
+            <div class="flex gap-2">
+                <span class="text-sm text-gray-500" id="cardCounter">Kartu <span id="currentIndex">1</span> dari <span id="totalCards"><%= cards.length %></span></span>
+                <button onclick="shuffleCards()" class="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm"><i class="fas fa-random mr-1"></i>Acak</button>
+            </div>
+        </div>
+        
+        <% if (cards.length > 0) { %>
+            <div id="cardContainer" class="relative">
+                <div id="studyCard" class="study-card p-8 text-center" onclick="flipCard()">
+                    <div class="card-front">
+                        <i class="fas fa-question-circle text-4xl text-telkom mb-4"></i>
+                        <h3 class="text-xl font-bold mb-4">Pertanyaan</h3>
+                        <p class="text-gray-700 text-lg" id="questionText"></p>
+                        <p class="text-sm text-gray-400 mt-6"><i class="fas fa-tap mr-1"></i>Klik kartu untuk lihat jawaban</p>
+                    </div>
+                    <div class="card-back" style="display: none;">
+                        <i class="fas fa-lightbulb text-4xl text-green-500 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-4">Jawaban</h3>
+                        <p class="text-gray-700 text-lg" id="answerText"></p>
+                        <div class="flex justify-center gap-4 mt-8">
+                            <button onclick="event.stopPropagation(); markMastered()" class="bg-green-500 text-white px-4 py-2 rounded-lg">✅ Sudah Hafal</button>
+                            <button onclick="event.stopPropagation(); nextCard()" class="bg-telkom text-white px-4 py-2 rounded-lg">➡️ Lanjut</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-center gap-4 mt-8">
+                <button onclick="prevCard()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400"><i class="fas fa-chevron-left mr-2"></i>Sebelum</button>
+                <button onclick="nextCard()" class="bg-telkom text-white px-6 py-2 rounded-lg">Selanjutnya <i class="fas fa-chevron-right ml-2"></i></button>
+            </div>
+        <% } else { %>
+            <div class="study-card p-8 text-center">
+                <i class="fas fa-cards text-5xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">Belum ada kartu. Buat kartu dulu ya!</p>
+                <a href="/flashcard" class="inline-block mt-4 bg-telkom text-white px-6 py-2 rounded-lg">Buat Kartu</a>
+            </div>
+        <% } %>
+    </div>
+    
+    <!-- Simpan data cards ke hidden element agar JS linter tidak error -->
+    <span id="cardsData" data-cards="<%= JSON.stringify(cards).replace(/"/g, '&quot;') %>" style="display:none"></span>
+
+    <script>
+        let cards = JSON.parse(document.getElementById('cardsData').getAttribute('data-cards'));
+        let currentIndex = 0;
+        let isFlipped = false;
+        
+        function updateCard() {
+            if (cards.length === 0) return;
+            const card = cards[currentIndex];
+            document.getElementById('questionText').innerText = card.question;
+            document.getElementById('answerText').innerText = card.answer;
+            document.getElementById('currentIndex').innerText = currentIndex + 1;
+            document.getElementById('totalCards').innerText = cards.length;
+            resetFlip();
+        }
+        
+        function flipCard() {
+            const cardDiv = document.getElementById('studyCard');
+            const front = cardDiv.querySelector('.card-front');
+            const back = cardDiv.querySelector('.card-back');
+            
+            if (!isFlipped) {
+                front.style.display = 'none';
+                back.style.display = 'block';
+                isFlipped = true;
+            } else {
+                front.style.display = 'block';
+                back.style.display = 'none';
+                isFlipped = false;
+            }
+        }
+        
+        function resetFlip() {
+            const cardDiv = document.getElementById('studyCard');
+            const front = cardDiv.querySelector('.card-front');
+            const back = cardDiv.querySelector('.card-back');
+            front.style.display = 'block';
+            back.style.display = 'none';
+            isFlipped = false;
+        }
+        
+        function nextCard() {
+            if (currentIndex < cards.length - 1) {
+                currentIndex++;
+                updateCard();
+            } else {
+                alert('🎉 Selamat! Kamu telah menyelesaikan semua kartu!');
+                if (confirm('Kembali ke halaman utama?')) {
+                    window.location.href = '/flashcard';
+                }
+            }
+        }
+        
+        function prevCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        }
+        
+        function shuffleCards() {
+            for (let i = cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cards[i], cards[j]] = [cards[j], cards[i]];
+            }
+            currentIndex = 0;
+            updateCard();
+        }
+        
+        async function markMastered() {
+            const card = cards[currentIndex];
+            const res = await fetch(`/flashcard/mastered/${card.id}`, { method: 'POST' });
+            if (res.ok) {
+                cards.splice(currentIndex, 1);
+                if (currentIndex >= cards.length) currentIndex = cards.length - 1;
+                if (cards.length === 0) {
+                    alert('🎉 Semua kartu sudah dihafal! Selamat!');
+                    window.location.href = '/flashcard';
+                } else {
+                    updateCard();
+                }
+            }
+        }
+        
+        updateCard();
+        
+        function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+    </script>
+</body>
+</html>

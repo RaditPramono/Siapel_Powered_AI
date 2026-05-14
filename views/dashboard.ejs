@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SIAPEL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #f5f5f5; }
+        .bg-telkom { background-color: #DC0000; }
+        .card-stat {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        #aiMessages { scrollbar-width: thin; scrollbar-color: #ddd transparent; }
+        .chat-bubble-user {
+            background: #DC0000;
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+            padding: 8px 14px;
+            max-width: 80%;
+            margin-left: auto;
+            word-break: break-word;
+        }
+        .chat-bubble-ai {
+            background: #f3f4f6;
+            color: #111;
+            border-radius: 16px 16px 16px 4px;
+            padding: 8px 14px;
+            max-width: 80%;
+            word-break: break-word;
+        }
+        .typing-dot {
+            width: 7px; height: 7px;
+            background: #999;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+    </style>
+</head>
+<body>
+    <div class="flex">
+        <%- include('partials/sidebar') %>
+
+        <main class="flex-1 p-6 overflow-y-auto">
+
+            <!-- Header -->
+            <div class="card-stat">
+                <h1 class="text-2xl font-bold">Dashboard</h1>
+                <p class="text-gray-500">Selamat datang, <strong><%= (user && user.name) ? user.name : 'Pengguna' %></strong>!</p>
+            </div>
+
+            <%
+                var safeTasks = (typeof tasks !== 'undefined' && Array.isArray(tasks)) ? tasks : [];
+                var belumCount = safeTasks.filter(function(t){ return t.status && t.status.toLowerCase() === 'belum'; }).length;
+                var selesaiCount = safeTasks.filter(function(t){ return t.status && t.status.toLowerCase() === 'selesai'; }).length;
+                var upcomingTasks = safeTasks.filter(function(t){ return t.status && t.status.toLowerCase() === 'belum'; }).slice(0, 5);
+            %>
+
+            <!-- Stat Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                <div class="card-stat">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-tasks text-red-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Tugas</p>
+                            <p class="text-3xl font-bold"><%= safeTasks.length %></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-stat">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Belum Selesai</p>
+                            <p class="text-3xl font-bold"><%= belumCount %></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-stat">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Selesai</p>
+                            <p class="text-3xl font-bold"><%= selesaiCount %></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart + Pengingat -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                <!-- Chart -->
+                <div class="card-stat lg:col-span-2">
+                    <h2 class="text-lg font-bold mb-4">Statistik Tugas</h2>
+                    <% if (safeTasks.length === 0) { %>
+                        <div class="flex flex-col items-center justify-center py-10 text-gray-300">
+                            <i class="fas fa-chart-bar text-5xl mb-3"></i>
+                            <p>Belum ada data tugas.</p>
+                        </div>
+                    <% } else { %>
+                        <div style="position:relative; height:220px;">
+                            <canvas id="myChart"></canvas>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Pengingat -->
+                <div class="card-stat">
+                    <h2 class="text-lg font-bold mb-3">
+                        <i class="fas fa-bell text-yellow-500 mr-1"></i> Pengingat
+                    </h2>
+                    <% if (upcomingTasks.length === 0) { %>
+                        <div class="flex flex-col items-center justify-center py-6 text-gray-300">
+                            <i class="fas fa-check-double text-4xl mb-2"></i>
+                            <p class="text-sm">Semua tugas selesai!</p>
+                        </div>
+                    <% } else { %>
+                        <ul class="space-y-2">
+                            <% upcomingTasks.forEach(function(task) { %>
+                                <li class="flex items-start gap-2 p-2 bg-red-50 rounded-lg">
+                                    <span class="mt-1 w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium truncate"><%= task.title || task.judul || 'Tugas' %></p>
+                                        <% if (task.deadline || task.dueDate) { %>
+                                            <p class="text-xs text-gray-400">
+                                                <i class="fas fa-calendar-alt mr-1"></i>
+                                                <%= new Date(task.deadline || task.dueDate).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}) %>
+                                            </p>
+                                        <% } %>
+                                    </div>
+                                </li>
+                            <% }) %>
+                        </ul>
+                        <a href="/tasks" class="block mt-3 text-center text-xs text-red-600 font-semibold hover:underline">
+                            Lihat semua tugas →
+                        </a>
+                    <% } %>
+                </div>
+
+            </div>
+
+            <!-- AI Assistant Widget -->
+            <div class="card-stat">
+                <h2 class="text-lg font-bold mb-3">
+                    <i class="fas fa-robot text-red-600 mr-1"></i> AI Assistant
+                    <span class="text-xs text-gray-400 font-normal ml-2">Tanya apa saja seputar pelajaran</span>
+                </h2>
+
+                <div id="aiMessages" class="flex flex-col gap-2 h-48 overflow-y-auto mb-3 pr-1">
+                    <div class="chat-bubble-ai">
+                        Halo <strong><%= (user && user.name) ? user.name.split(' ')[0] : 'Kamu' %></strong>! 👋 Ada yang bisa aku bantu hari ini?
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input
+                        id="aiInput"
+                        type="text"
+                        placeholder="Tanya sesuatu..."
+                        class="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                        onkeydown="if(event.key==='Enter') sendAI()"
+                    />
+                    <button
+                        onclick="sendAI()"
+                        class="bg-red-600 hover:bg-red-700 text-white rounded-xl px-4 py-2 text-sm font-semibold transition"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Data chart disimpen di attribute biar JS linter tidak ngamuk -->
+    <span id="chartData"
+        data-belum="<%= belumCount %>"
+        data-selesai="<%= selesaiCount %>"
+        style="display:none">
+    </span>
+
+    <script>
+        // ── Chart ──────────────────────────────────────────────
+        var chartEl = document.getElementById('myChart');
+        if (chartEl) {
+            var cd      = document.getElementById('chartData');
+            var belum   = parseInt(cd.getAttribute('data-belum'), 10);
+            var selesai = parseInt(cd.getAttribute('data-selesai'), 10);
+
+            new Chart(chartEl.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Belum Selesai', 'Selesai'],
+                    datasets: [{
+                        label: 'Jumlah Tugas',
+                        data: [belum, selesai],
+                        backgroundColor: ['#DC0000', '#10B981'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        // ── AI Assistant ───────────────────────────────────────
+        var aiMessages = document.getElementById('aiMessages');
+
+        function appendBubble(text, isUser) {
+            var div = document.createElement('div');
+            div.className = isUser ? 'chat-bubble-user' : 'chat-bubble-ai';
+            div.textContent = text;
+            aiMessages.appendChild(div);
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            var div = document.createElement('div');
+            div.className = 'chat-bubble-ai flex gap-1 items-center';
+            div.id = 'typingIndicator';
+            div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+            aiMessages.appendChild(div);
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+        }
+
+        function removeTyping() {
+            var t = document.getElementById('typingIndicator');
+            if (t) t.remove();
+        }
+
+        // Load history dari database saat halaman dibuka
+        async function loadHistory() {
+            try {
+                var res  = await fetch('/ai-chat/history');
+                var data = await res.json();
+                if (data.history && data.history.length > 0) {
+                    // Hapus bubble sapaan dulu
+                    aiMessages.innerHTML = '';
+                    data.history.forEach(function(item) {
+                        appendBubble(item.message, true);
+                        appendBubble(item.reply, false);
+                    });
+                }
+            } catch(e) { /* gagal load history, biarkan bubble sapaan tetap ada */ }
+        }
+        loadHistory();
+
+        async function sendAI() {
+            var input = document.getElementById('aiInput');
+            var text  = input.value.trim();
+            if (!text) return;
+
+            appendBubble(text, true);
+            input.value = '';
+            showTyping();
+
+            try {
+                // FIX: pakai FormData karena route pakai multer
+                var formData = new FormData();
+                formData.append('message', text);
+
+                var res  = await fetch('/ai-chat/chat', {
+                    method: 'POST',
+                    body: formData
+                });
+                var data = await res.json();
+                removeTyping();
+                appendBubble(data.reply || data.message || 'Maaf, tidak ada respons.', false);
+            } catch (e) {
+                removeTyping();
+                appendBubble('Gagal menghubungi AI. Coba lagi ya!', false);
+            }
+        }
+    </script>
+</body>
+</html>

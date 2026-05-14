@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Study Tracker - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; margin: 0; padding: 0; transition: background 0.3s ease; }
+        .bg-telkom { background-color: #DC0000; }
+        .sidebar { background: white; border-right: 1px solid #ddd; transition: all 0.3s ease; }
+        .nav-item:hover { background-color: #FFF5F5; color: #DC0000; }
+        .timer-card { background: white; border-radius: 16px; border: 1px solid #ddd; transition: all 0.3s ease; }
+        .timer-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        .timer-number { font-size: 56px; font-weight: bold; font-family: monospace; color: #DC0000; }
+        @media (min-width: 768px) { .timer-number { font-size: 72px; } }
+        
+        body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark .sidebar { background-color: #1e293b !important; border-right-color: #334155 !important; }
+        body.dark .sidebar .text-gray-800, body.dark .sidebar .text-gray-700, body.dark .sidebar h1, body.dark .sidebar p { color: #f1f5f9 !important; }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background-color: #334155 !important; color: #ffffff !important; }
+        body.dark .timer-card { background-color: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark .text-gray-800, body.dark .text-gray-700, body.dark .font-bold { color: #f1f5f9 !important; }
+        body.dark .text-gray-400, body.dark .text-gray-500 { color: #94a3b8 !important; }
+        body.dark .bg-gray-50, body.dark .bg-gray-100, body.dark .bg-white { background-color: #1e293b !important; }
+        body.dark .border-gray-100, body.dark .border-gray-200 { border-color: #334155 !important; }
+        body.dark .menu-btn { background-color: #DC0000 !important; }
+        
+        .menu-btn { position: fixed; top: 12px; left: 12px; z-index: 999; background: #DC0000; color: white; padding: 10px 14px; border-radius: 12px; display: none; cursor: pointer; }
+        @media (max-width: 768px) { 
+            .menu-btn { display: block; } 
+            .sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; width: 280px; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; } 
+            .sidebar.open { transform: translateX(0); } 
+            .main-content { padding-top: 60px; } 
+            .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; } 
+            .sidebar-overlay.active { display: block; } 
+        }
+    </style>
+</head>
+<body>
+    <button onclick="toggleSidebar()" class="menu-btn"><i class="fas fa-bars text-xl"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <div class="flex h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 main-content">
+            <div class="mb-6 md:mb-8"><h1 class="text-2xl md:text-3xl font-bold text-gray-800"><i class="fas fa-clock text-telkom mr-3"></i>Study Tracker</h1><p class="text-xs md:text-sm text-gray-400 mt-1">Timer belajar Pomodoro untuk meningkatkan fokus</p></div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+                <div class="timer-card p-4 md:p-6 text-center"><h2 class="text-base md:text-xl font-bold mb-3"><i class="fas fa-hourglass-half text-telkom mr-2"></i>Pomodoro Timer</h2><div class="timer-number text-telkom" id="timerDisplay">25:00</div><div class="flex flex-wrap justify-center gap-2 md:gap-3 mt-4"><button onclick="startTimer()" class="bg-green-500 text-white px-4 md:px-6 py-1 md:py-2 rounded-xl text-sm md:text-base font-bold"><i class="fas fa-play mr-1"></i>Mulai</button><button onclick="pauseTimer()" class="bg-yellow-500 text-white px-4 md:px-6 py-1 md:py-2 rounded-xl text-sm md:text-base font-bold"><i class="fas fa-pause mr-1"></i>Jeda</button><button onclick="resetTimer()" class="bg-red-500 text-white px-4 md:px-6 py-1 md:py-2 rounded-xl text-sm md:text-base font-bold"><i class="fas fa-redo mr-1"></i>Reset</button></div><div class="mt-4"><input type="text" id="studyNotes" placeholder="Catatan belajar" class="w-full p-2 border rounded-xl text-sm"><button onclick="saveSession()" class="mt-3 w-full bg-telkom text-white py-2 rounded-xl text-sm font-bold"><i class="fas fa-save mr-1"></i>Simpan Sesi</button><div id="saveResult" class="mt-2 text-xs"></div></div></div>
+                
+                <div class="timer-card p-4 md:p-6"><h2 class="text-base md:text-xl font-bold mb-3"><i class="fas fa-chart-line text-telkom mr-2"></i>Statistik Belajar</h2><div class="space-y-3"><div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span class="text-sm font-bold"><i class="fas fa-calendar-day text-telkom mr-2"></i>Hari Ini</span><span class="text-xl font-bold text-telkom"><%= todayMinutes %> <span class="text-xs">menit</span></span></div><div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span class="text-sm font-bold"><i class="fas fa-calendar-week text-telkom mr-2"></i>Minggu Ini</span><span class="text-xl font-bold text-telkom"><%= weekMinutes %> <span class="text-xs">menit</span></span></div><div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl"><span class="text-sm font-bold"><i class="fas fa-clock text-telkom mr-2"></i>Sesi Belajar</span><span class="text-xl font-bold text-telkom"><%= sessions.length %> <span class="text-xs">sesi</span></span></div></div></div>
+            </div>
+            
+            <div class="timer-card p-4 md:p-6"><h2 class="text-base md:text-xl font-bold mb-3"><i class="fas fa-history text-telkom mr-2"></i>Riwayat Belajar</h2>
+                <% if (sessions.length > 0) { %><div class="space-y-2 max-h-64 overflow-y-auto"><% sessions.forEach(function(s) { %><div class="flex flex-col md:flex-row justify-between items-start md:items-center p-3 bg-gray-50 rounded-xl"><div><p class="font-bold text-sm"><i class="fas fa-hourglass-half mr-1"></i><%= s.duration_minutes %> menit</p><% if (s.notes) { %><p class="text-xs text-gray-500"><%= s.notes %></p><% } %></div><p class="text-xs text-gray-400 mt-1 md:mt-0"><%= new Date(s.created_at).toLocaleDateString('id-ID') %></p></div><% }); %></div>
+                <% } else { %><div class="text-center py-6"><i class="fas fa-hourglass-start text-3xl text-gray-300 mb-3"></i><p class="text-gray-400 text-sm">✨ Belum ada sesi belajar ✨</p></div><% } %>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        let timeLeft = 1500, timerInterval = null, isRunning = false;
+        const timerDisplay = document.getElementById('timerDisplay');
+        function updateDisplay() { let m = Math.floor(timeLeft / 60), s = timeLeft % 60; timerDisplay.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; if (timeLeft <= 10 && timeLeft > 0 && isRunning) { timerDisplay.style.color = '#EF4444'; timerDisplay.style.animation = 'blink 1s infinite'; } else if (timeLeft < 60) { timerDisplay.style.color = '#F59E0B'; timerDisplay.style.animation = 'none'; } else { timerDisplay.style.color = '#DC0000'; timerDisplay.style.animation = 'none'; } }
+        const style = document.createElement('style'); style.textContent = `@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }`; document.head.appendChild(style);
+        function startTimer() { if (isRunning) return; isRunning = true; timerInterval = setInterval(() => { if (timeLeft > 0) { timeLeft--; updateDisplay(); } else { clearInterval(timerInterval); isRunning = false; alert('🎉 Waktu belajar selesai!'); let notes = document.getElementById('studyNotes').value || 'Belajar 25 menit'; fetch('/study/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ duration: 25, notes: notes + ' (otomatis)' }) }).then(() => setTimeout(() => location.reload(), 1500)); } }, 1000); }
+        function pauseTimer() { if (!isRunning) return; clearInterval(timerInterval); isRunning = false; timerDisplay.style.animation = 'none'; }
+        function resetTimer() { clearInterval(timerInterval); isRunning = false; timeLeft = 1500; updateDisplay(); timerDisplay.style.animation = 'none'; document.getElementById('saveResult').innerHTML = ''; }
+        async function saveSession() { let duration = 25 - Math.floor(timeLeft / 60); if (duration < 1) { document.getElementById('saveResult').innerHTML = '<i class="fas fa-exclamation-circle"></i> Mulai timer dulu!'; setTimeout(() => document.getElementById('saveResult').innerHTML = '', 2000); return; } let notes = document.getElementById('studyNotes').value || `Belajar ${duration} menit`; let resultDiv = document.getElementById('saveResult'); resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...'; let res = await fetch('/study/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ duration: duration, notes: notes }) }); let data = await res.json(); if (data.success) { resultDiv.innerHTML = '<i class="fas fa-check-circle"></i> Tersimpan! Refresh...'; setTimeout(() => location.reload(), 1500); } else { resultDiv.innerHTML = '<i class="fas fa-times-circle"></i> Gagal simpan'; } }
+        updateDisplay();
+        function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+        if (window.innerWidth < 768) { document.querySelectorAll('#sidebar a').forEach(link => { link.addEventListener('click', () => { if (window.innerWidth < 768) toggleSidebar(); }); }); }
+    </script>
+</body>
+</html>

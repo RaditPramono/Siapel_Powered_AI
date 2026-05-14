@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Prestasi - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; margin: 0; padding: 0; transition: background 0.3s ease; }
+        .bg-telkom { background-color: #DC0000; }
+        .sidebar { background: white; border-right: 1px solid #ddd; transition: all 0.3s ease; }
+        .nav-item:hover { background-color: #FFF5F5; color: #DC0000; }
+        .badge-card { background: white; border-radius: 16px; border: 1px solid #ddd; transition: all 0.3s ease; }
+        .badge-earned { background: linear-gradient(135deg, #f5f0ff 0%, #e8d5ff 100%); border: 2px solid #DC0000; }
+        
+        body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark .sidebar { background-color: #1e293b !important; border-right-color: #334155 !important; }
+        body.dark .sidebar .text-gray-800, body.dark .sidebar .text-gray-700, body.dark .sidebar h1, body.dark .sidebar p { color: #f1f5f9 !important; }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background-color: #334155 !important; color: #ffffff !important; }
+        body.dark .badge-card { background-color: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark .text-gray-800, body.dark .text-gray-700, body.dark .font-bold { color: #f1f5f9 !important; }
+        body.dark .text-gray-400, body.dark .text-gray-500 { color: #94a3b8 !important; }
+        body.dark .bg-gray-50, body.dark .bg-gray-100, body.dark .bg-white { background-color: #1e293b !important; }
+        body.dark .border-gray-100, body.dark .border-gray-200 { border-color: #334155 !important; }
+        body.dark .menu-btn { background-color: #DC0000 !important; }
+        
+        .menu-btn { position: fixed; top: 12px; left: 12px; z-index: 999; background: #DC0000; color: white; padding: 10px 14px; border-radius: 12px; display: none; cursor: pointer; }
+        @media (max-width: 768px) { 
+            .menu-btn { display: block; } 
+            .sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; width: 280px; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; } 
+            .sidebar.open { transform: translateX(0); } 
+            .main-content { padding-top: 60px; } 
+            .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; } 
+            .sidebar-overlay.active { display: block; } 
+        }
+    </style>
+</head>
+<body>
+    <button onclick="toggleSidebar()" class="menu-btn"><i class="fas fa-bars text-xl"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <div class="flex h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 main-content">
+            <div class="mb-6 md:mb-8"><h1 class="text-2xl md:text-3xl font-bold text-gray-800"><i class="fas fa-trophy text-telkom mr-3"></i>Pusat Prestasi</h1><p class="text-xs md:text-sm text-gray-400 mt-1">Kumpulkan poin dan raih badge/lencana!</p></div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+                <div class="bg-white rounded-2xl p-3 md:p-6 text-center border"><i class="fas fa-star text-yellow-500 text-xl md:text-3xl mb-1"></i><p class="text-xl md:text-3xl font-bold text-telkom"><%= points.total_points %></p><p class="text-xs md:text-sm text-gray-500 font-bold">Total Poin</p></div>
+                <div class="bg-white rounded-2xl p-3 md:p-6 text-center border"><i class="fas fa-check-circle text-green-500 text-xl md:text-3xl mb-1"></i><p class="text-xl md:text-3xl font-bold text-telkom"><%= points.tasks_completed %></p><p class="text-xs md:text-sm text-gray-500 font-bold">Tugas Selesai</p></div>
+                <div class="bg-white rounded-2xl p-3 md:p-6 text-center border"><i class="fas fa-clock text-blue-500 text-xl md:text-3xl mb-1"></i><p class="text-xl md:text-3xl font-bold text-telkom"><%= points.study_minutes %></p><p class="text-xs md:text-sm text-gray-500 font-bold">Menit Belajar</p></div>
+                <div class="bg-white rounded-2xl p-3 md:p-6 text-center border"><i class="fas fa-book text-purple-500 text-xl md:text-3xl mb-1"></i><p class="text-xl md:text-3xl font-bold text-telkom"><%= points.notes_created %></p><p class="text-xs md:text-sm text-gray-500 font-bold">Catatan Dibuat</p></div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 md:p-6 mb-6 md:mb-8"><h2 class="text-base md:text-xl font-bold mb-3"><i class="fas fa-medal text-telkom mr-2"></i>Badge yang Didapat</h2>
+                <% if (badges.length > 0) { %><div class="grid grid-cols-1 md:grid-cols-3 gap-3"><% badges.forEach(function(b) { %><div class="badge-card p-3 md:p-4 text-center badge-earned"><i class="fas <%= b.badge_icon %> text-2xl md:text-4xl text-telkom mb-1"></i><p class="font-bold text-sm"><%= b.badge_name %></p><p class="text-xs text-gray-500">Didapat: <%= new Date(b.earned_at).toLocaleDateString('id-ID') %></p></div><% }); %></div>
+                <% } else { %><p class="text-gray-400 text-center py-6 text-sm font-bold">✨ Belum ada badge. Selesaikan tugas dan belajar untuk meraih badge! ✨</p><% } %>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-4 md:p-6"><h2 class="text-base md:text-xl font-bold mb-3"><i class="fas fa-flag-checkered text-telkom mr-2"></i>Badge yang Tersedia</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3"><% availableBadges.forEach(function(b) { %><div class="badge-card p-3 md:p-4 text-center opacity-75"><i class="fas <%= b.icon %> text-2xl md:text-3xl text-gray-400 mb-1"></i><p class="font-bold text-gray-600 text-sm"><%= b.name %></p><p class="text-xs text-gray-400"><%= b.desc %></p></div><% }); %></div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+        if (window.innerWidth < 768) { document.querySelectorAll('#sidebar a').forEach(link => { link.addEventListener('click', () => { if (window.innerWidth < 768) toggleSidebar(); }); }); }
+    </script>
+</body>
+</html>

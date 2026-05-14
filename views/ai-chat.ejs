@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>AI Assistant - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; margin: 0; padding: 0; transition: background 0.3s ease; }
+        .bg-telkom { background-color: #DC0000; }
+        .sidebar { background: white; border-right: 1px solid #ddd; transition: all 0.3s ease; }
+        .nav-item:hover { background-color: #FFF5F5; color: #DC0000; }
+        .chat-container { height: calc(100vh - 200px); overflow-y: auto; }
+        .user-message { background: #DC0000; color: white; border-radius: 18px 18px 4px 18px; }
+        .ai-message { background: #e5e7eb; color: #1f2937; border-radius: 18px 18px 18px 4px; }
+        
+        body.dark { background-color: #0f172a !important; }
+        body.dark .sidebar { background-color: #1e293b !important; border-right-color: #334155 !important; }
+        body.dark .sidebar .text-gray-800, body.dark .sidebar .text-gray-700, body.dark .sidebar h1, body.dark .sidebar p { color: #f1f5f9 !important; }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background-color: #334155 !important; color: #ffffff !important; }
+        body.dark .ai-message { background-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark .bg-white, body.dark .bg-gray-50 { background-color: #1e293b !important; }
+        body.dark .border-t, body.dark .border-b, body.dark .border { border-color: #334155 !important; }
+        body.dark input { background-color: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark label.bg-gray-200 { background-color: #334155 !important; color: #f1f5f9 !important; }
+        
+        .menu-btn { position: fixed; top: 12px; left: 12px; z-index: 999; background: #DC0000; color: white; padding: 10px 14px; border-radius: 12px; display: none; cursor: pointer; }
+        @media (max-width: 768px) { 
+            .menu-btn { display: block; } 
+            .sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; width: 280px; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; } 
+            .sidebar.open { transform: translateX(0); } 
+            .main-content { padding-top: 60px; } 
+            .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; } 
+            .sidebar-overlay.active { display: block; } 
+        }
+    </style>
+</head>
+<body>
+    <button onclick="toggleSidebar()" class="menu-btn"><i class="fas fa-bars text-xl"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <div class="flex h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        
+        <main class="flex-1 flex flex-col p-4 md:p-8 main-content">
+            <div class="bg-white rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
+                <div class="p-4 border-b bg-telkom text-white rounded-t-2xl">
+                    <h1 class="text-xl font-bold"><i class="fas fa-robot mr-2"></i>AI Assistant - SiaPel</h1>
+                    <p class="text-sm opacity-90">Tanyakan apa saja tentang belajar! Bisa upload gambar soal, PDF, Word, atau Excel</p>
+                </div>
+                
+                <div id="chatMessages" class="chat-container p-4 space-y-3 flex-1">
+                    <div class="flex justify-start">
+                        <div class="ai-message p-3 max-w-[80%] rounded-2xl">
+                            <p>Halo! 👋 Aku <strong>SiaPel</strong>, asisten belajarmu. Ada yang bisa aku bantu? Kamu bisa upload <strong>foto soal, PDF, Word, atau Excel</strong> untuk aku analisis!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t bg-white">
+                    <div class="flex gap-2">
+                        <label for="fileInput" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-3 rounded-xl cursor-pointer transition-all">
+                            <i class="fas fa-paperclip"></i>
+                        </label>
+                        <input type="file" id="fileInput" accept="image/*,.pdf,.docx,.txt,.xlsx,.csv" style="display: none;">
+                        
+                        <input type="text" id="messageInput" placeholder="Ketik pertanyaanmu di sini... atau upload gambar/PDF/Word" class="flex-1 p-3 border rounded-xl focus:outline-none focus:border-telkom">
+                        <button onclick="sendMessage()" class="bg-telkom text-white px-6 py-3 rounded-xl font-bold hover:bg-telkom transition-all"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div id="fileNameDisplay" class="text-xs text-gray-500 mt-1 hidden"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        let selectedFile = null;
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            selectedFile = e.target.files[0];
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            if (selectedFile) {
+                fileNameDisplay.innerText = `📎 ${selectedFile.name}`;
+                fileNameDisplay.classList.remove('hidden');
+            } else {
+                fileNameDisplay.classList.add('hidden');
+            }
+        });
+        
+        // Pakai appendChild bukan innerHTML+= agar elemen DOM tidak dihancurkan
+        function addBubble(chatDiv, html, id) {
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            const el = temp.firstElementChild;
+            if (id) el.id = id;
+            chatDiv.appendChild(el);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+            return el;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message && !selectedFile) return;
+            
+            const chatDiv = document.getElementById('chatMessages');
+            
+            // Tampilkan pesan user
+            let userInner = '';
+            if (selectedFile) {
+                userInner += `<div><i class="fas fa-paperclip mr-1"></i> <span class="text-xs">${escapeHtml(selectedFile.name)}</span></div>`;
+            }
+            if (message) {
+                userInner += `<p>${escapeHtml(message)}</p>`;
+            }
+            addBubble(chatDiv, `<div class="flex justify-end"><div class="user-message p-3 max-w-[80%] rounded-2xl">${userInner}</div></div>`);
+            
+            // Kirim via FormData
+            const formData = new FormData();
+            formData.append('message', message);
+            if (selectedFile) formData.append('file', selectedFile);
+            
+            input.value = '';
+            const oldFile = selectedFile;
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileNameDisplay').classList.add('hidden');
+            
+            // Loading bubble — disimpan sebagai referensi DOM langsung
+            const loadingEl = addBubble(chatDiv,
+                `<div class="flex justify-start"><div class="ai-message p-3 max-w-[80%] rounded-2xl"><i class="fas fa-spinner fa-spin"></i> ${oldFile ? 'Sedang membaca file dan memikirkan jawaban...' : 'Sedang memikirkan jawaban...'}</div></div>`
+            );
+            
+            try {
+                const res  = await fetch('/ai-chat/chat', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                // Hapus loading pakai referensi DOM — tidak akan gagal
+                loadingEl.remove();
+                
+                addBubble(chatDiv, `<div class="flex justify-start"><div class="ai-message p-3 max-w-[80%] rounded-2xl"><p>${escapeHtml(data.reply)}</p></div></div>`);
+            } catch (err) {
+                loadingEl.remove();
+                addBubble(chatDiv, `<div class="flex justify-start"><div class="ai-message p-3 max-w-[80%] rounded-2xl bg-red-100 text-red-700"><p>❌ Error: ${err.message}</p></div></div>`);
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        function toggleSidebar() { 
+            document.getElementById('sidebar').classList.toggle('open'); 
+            document.getElementById('sidebarOverlay').classList.toggle('active'); 
+        }
+        if (window.innerWidth < 768) { 
+            document.querySelectorAll('#sidebar a').forEach(link => { 
+                link.addEventListener('click', () => { if (window.innerWidth < 768) toggleSidebar(); }); 
+            }); 
+        }
+        
+        function toggleDarkMode() { 
+            document.body.classList.toggle('dark'); 
+            localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); 
+        }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+    </script>
+</body>
+</html>

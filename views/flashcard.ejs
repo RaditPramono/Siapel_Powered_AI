@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Flashcard - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        body { background: #F5F5F5; margin: 0; padding: 0; transition: background 0.3s ease; }
+        .bg-telkom { background-color: #DC0000; }
+        .sidebar { background: white; border-right: 1px solid #ddd; transition: all 0.3s ease; }
+        .nav-item:hover { background-color: #FFF5F5; color: #DC0000; }
+        .flashcard-card { background: white; border-radius: 16px; border: 1px solid #ddd; transition: all 0.3s ease; }
+        .flashcard-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        
+        body.dark { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark .sidebar { background-color: #1e293b !important; border-right-color: #334155 !important; }
+        body.dark .sidebar .text-gray-800, body.dark .sidebar .text-gray-700, body.dark .sidebar h1, body.dark .sidebar p { color: #f1f5f9 !important; }
+        body.dark .nav-item { color: #cbd5e1 !important; }
+        body.dark .nav-item:hover { background-color: #334155 !important; color: #ffffff !important; }
+        body.dark .flashcard-card { background-color: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark .text-gray-800, body.dark .text-gray-700, body.dark .font-bold { color: #f1f5f9 !important; }
+        body.dark .text-gray-400, body.dark .text-gray-500 { color: #94a3b8 !important; }
+        body.dark .bg-gray-50, body.dark .bg-gray-100, body.dark .bg-white { background-color: #1e293b !important; }
+        body.dark .border-gray-100, body.dark .border-gray-200 { border-color: #334155 !important; }
+        
+        .menu-btn { position: fixed; top: 12px; left: 12px; z-index: 999; background: #DC0000; color: white; padding: 10px 14px; border-radius: 12px; display: none; cursor: pointer; }
+        @media (max-width: 768px) { 
+            .menu-btn { display: block; } 
+            .sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; width: 280px; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; } 
+            .sidebar.open { transform: translateX(0); } 
+            .main-content { padding-top: 60px; } 
+            .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; } 
+            .sidebar-overlay.active { display: block; } 
+        }
+    </style>
+</head>
+<body>
+    <button onclick="toggleSidebar()" class="menu-btn"><i class="fas fa-bars text-xl"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <div class="flex h-screen">
+        <%- include('partials/sidebar.ejs') %>
+        
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 main-content">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800"><i class="fas fa-cards text-telkom mr-3"></i>Flashcard</h1>
+                    <p class="text-xs md:text-sm text-gray-400 mt-1">Kartu hafalan untuk mempermudah belajar</p>
+                </div>
+                <div class="flex gap-2">
+                    <a href="/flashcard/study/all" class="bg-purple-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base"><i class="fas fa-play mr-2"></i>Mode Belajar</a>
+                    <button onclick="openAddModal()" class="bg-telkom text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold text-sm md:text-base"><i class="fas fa-plus mr-2"></i>Tambah Kartu</button>
+                </div>
+            </div>
+            
+            <!-- Statistik -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                <div class="bg-white rounded-2xl p-4 md:p-6 text-center border"><i class="fas fa-layer-group text-telkom text-2xl md:text-3xl mb-2"></i><p class="text-2xl md:text-3xl font-bold text-gray-800"><%= stats.total %></p><p class="text-xs md:text-sm text-gray-500">Total Kartu</p></div>
+                <div class="bg-white rounded-2xl p-4 md:p-6 text-center border"><i class="fas fa-check-circle text-green-500 text-2xl md:text-3xl mb-2"></i><p class="text-2xl md:text-3xl font-bold text-gray-800"><%= stats.mastered %></p><p class="text-xs md:text-sm text-gray-500">Dihafal</p></div>
+                <div class="bg-white rounded-2xl p-4 md:p-6 text-center border"><i class="fas fa-chart-line text-blue-500 text-2xl md:text-3xl mb-2"></i><p class="text-2xl md:text-3xl font-bold text-gray-800"><%= stats.percent %>%</p><p class="text-xs md:text-sm text-gray-500">Progress</p></div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 rounded-full h-2 mb-8"><div class="bg-telkom rounded-full h-2" style="width: <%= stats.percent %>%"></div></div>
+            
+            <!-- Daftar Kartu -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <% flashcards.forEach(function(card) { %>
+                    <div class="flashcard-card p-4 md:p-5">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="text-base md:text-lg font-bold text-gray-800 truncate"><%= card.title || card.question.substring(0, 50) %></h3>
+                                <p class="text-xs text-gray-400 mt-1"><%= card.category || 'Umum' %> • <%= card.difficulty === 'mudah' ? 'Mudah' : card.difficulty === 'sedang' ? 'Sedang' : 'Sulit' %></p>
+                                <p class="text-gray-600 mt-2 text-sm"><i class="fas fa-question-circle mr-1"></i> <%= card.question.substring(0, 80) %>...</p>
+                                <% if (!card.mastered) { %><span class="inline-block mt-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Belum dihafal</span><% } %>
+                                <% if (card.mastered) { %><span class="inline-block mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Sudah dihafal</span><% } %>
+                            </div>
+                            <div class="flex gap-2 ml-2">
+                                <% if (!card.mastered) { %>
+                                    <form action="/flashcard/mastered/<%= card.id %>" method="POST">
+                                        <button type="submit" class="px-2 md:px-3 py-1 bg-green-500 text-white rounded-lg text-xs"><i class="fas fa-check"></i></button>
+                                    </form>
+                                <% } %>
+                                <form action="/flashcard/delete/<%= card.id %>" method="POST" onsubmit="return confirm('Yakin hapus kartu ini?')">
+                                    <button type="submit" class="px-2 md:px-3 py-1 bg-red-500 text-white rounded-lg text-xs"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+                <% if (flashcards.length === 0) { %>
+                    <div class="col-span-2 bg-white rounded-2xl p-8 md:p-12 text-center flashcard-card">
+                        <i class="fas fa-cards text-4xl md:text-5xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-400 text-sm md:text-base">Belum ada kartu. Buat kartu pertama kamu!</p>
+                    </div>
+                <% } %>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Tambah Kartu -->
+    <div id="addModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-bold mb-4"><i class="fas fa-plus-circle text-telkom mr-2"></i>Tambah Kartu</h2>
+            <form action="/flashcard/add" method="POST">
+                <input type="text" name="title" placeholder="Judul (opsional)" class="w-full p-3 border rounded-xl mb-3">
+                <textarea name="question" placeholder="Pertanyaan" class="w-full p-3 border rounded-xl mb-3" rows="3" required></textarea>
+                <textarea name="answer" placeholder="Jawaban" class="w-full p-3 border rounded-xl mb-3" rows="3" required></textarea>
+                <input type="text" name="category" placeholder="Kategori (contoh: Sejarah, Matematika)" class="w-full p-3 border rounded-xl mb-3">
+                <select name="difficulty" class="w-full p-3 border rounded-xl mb-4">
+                    <option value="mudah">Mudah</option>
+                    <option value="sedang" selected>Sedang</option>
+                    <option value="sulit">Sulit</option>
+                </select>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-gray-300 rounded-xl">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-telkom text-white rounded-xl">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function openAddModal() { document.getElementById('addModal').classList.remove('hidden'); document.getElementById('addModal').classList.add('flex'); }
+        function closeAddModal() { document.getElementById('addModal').classList.remove('flex'); document.getElementById('addModal').classList.add('hidden'); }
+        function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'enabled' : 'disabled'); }
+        if (localStorage.getItem('darkMode') === 'enabled') { document.body.classList.add('dark'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+        if (window.innerWidth < 768) { document.querySelectorAll('#sidebar a').forEach(link => { link.addEventListener('click', () => { if (window.innerWidth < 768) toggleSidebar(); }); }); }
+    </script>
+</body>
+</html>

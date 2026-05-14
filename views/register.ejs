@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar - SIAPEL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background: #F5F5F5; }
+        .telkom-red { color: #DC0000; }
+        .bg-telkom { background-color: #DC0000; }
+        .hover-bg-telkom:hover { background-color: #B80000; }
+        .card-elegant { background: white; border-radius: 20px; box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.08); }
+        .input-elegant { border: 1px solid #E5E5E5; transition: all 0.3s ease; }
+        .input-elegant:focus { outline: none; border-color: #DC0000; box-shadow: 0 0 0 3px rgba(220, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="card-elegant p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="border-2 border-telkom rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-user-plus text-telkom text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Daftar Akun</h1>
+            <p class="text-gray-500 mt-2">Bergabung dengan SIAPEL</p>
+        </div>
+        
+        <% if (error) { %>
+            <div class="bg-red-50 border-l-4 border-telkom text-red-700 p-3 rounded mb-4 text-sm">
+                <i class="fas fa-exclamation-circle mr-2"></i><%= error %>
+            </div>
+        <% } %>
+        
+        <form action="/register" method="POST">
+            <div class="mb-3">
+                <input type="text" name="name" placeholder="Nama Lengkap" 
+                    class="input-elegant w-full px-4 py-3 rounded-xl bg-white text-gray-800">
+            </div>
+            <div class="mb-3">
+                <input type="email" name="email" placeholder="Email" 
+                    class="input-elegant w-full px-4 py-3 rounded-xl bg-white text-gray-800">
+            </div>
+            <div class="mb-3">
+                <input type="password" name="password" placeholder="Password" 
+                    class="input-elegant w-full px-4 py-3 rounded-xl bg-white text-gray-800">
+            </div>
+            <div class="mb-6">
+                <input type="text" name="kelas" placeholder="Kelas (Contoh: XI TKJ 4)" 
+                    class="input-elegant w-full px-4 py-3 rounded-xl bg-white text-gray-800">
+            </div>
+            <button type="submit" class="bg-telkom text-white w-full py-3 rounded-xl font-semibold transition-all hover-bg-telkom">
+                <i class="fas fa-user-plus mr-2"></i>Buat Akun
+            </button>
+        </form>
+        <p class="text-center text-gray-500 text-sm mt-6">
+            Sudah punya akun? <a href="/login" class="text-telkom font-semibold hover:underline">Login</a>
+        </p>
+    </div>
+</body>
+</html>
