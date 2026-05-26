@@ -25,22 +25,25 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Database connection
+// Database connection - pakai pool biar auto-reconnect
 let db;
 async function connectDB() {
     try {
-        db = await mysql.createConnection({
+        db = mysql.createPool({
             host: process.env.DB_HOST || 'localhost',
             user: process.env.DB_USER || 'root',
             password: process.env.DB_PASS || '',
             database: process.env.DB_NAME || 'railway',
-            // FIX: tambah port untuk Railway
-            port: parseInt(process.env.DB_PORT) || 3306
+            port: parseInt(process.env.DB_PORT) || 3306,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0,
+            enableKeepAlive: true,
+            keepAliveInitialDelay: 0
         });
-        console.log('✅ Database connected');
+        console.log('✅ Database pool created');
     } catch (err) {
         console.log('❌ Database connection failed:', err.message);
-        // Retry koneksi setelah 5 detik
         setTimeout(connectDB, 5000);
     }
 }
